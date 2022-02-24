@@ -79,6 +79,7 @@ describe('donation positive tests', () => {
     await provider.connection.confirmTransaction(tx);
 
     const data = await program.account.donaterAccount.fetch(donaterAccount)
+    console.log(data.donationSum.toNumber());
     assert.equal(firstDonate.add(secondDonate), data.donationSum.toNumber())
     const newBalance = await provider.connection.getBalance(ownerPda.publicKey);
     assert.equal(newBalance, balance + secondDonate.toNumber())
