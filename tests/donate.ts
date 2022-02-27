@@ -85,7 +85,39 @@ describe('donation positive tests', () => {
     assert.equal(newBalance, balance + secondDonate.toNumber())
     balance = newBalance;
   })
+  it('another donate', async () => {
+    donater = anchor.web3.Keypair.generate();
+    const airdropSignature = await provider.connection.requestAirdrop(
+      donater.publicKey,
+      anchor.web3.LAMPORTS_PER_SOL,
+    );
+    await provider.connection.confirmTransaction(airdropSignature);
 
+    [donaterAccount, bump] = await anchor.web3.PublicKey.findProgramAddress(
+      // @ts-ignore
+      ['donate', donater.publicKey.toBytes()],
+      program.programId
+    );
+    const tx = await program.rpc.donate(firstDonate, bump, {
+      accounts: {
+        donaterAccount: donaterAccount,
+        donater: donater.publicKey,
+        receiver: ownerPda.publicKey,
+        systemProgram: SystemProgram.programId
+      },
+      signers: [donater]
+    })
+    await provider.connection.confirmTransaction(tx);
+    const data = await program.account.donaterAccount.fetch(donaterAccount)
+    assert.equal(data.donationSum.toNumber(),firstDonate)
+    const newBalance = await provider.connection.getBalance(ownerPda.publicKey);
+    assert.equal(newBalance, balance + firstDonate.toNumber())
+    balance = newBalance;
+
+    const donaters = await program.account.donaterAccount.all()
+    assert.equal(donaters.length, 2)
+    console.log(donaters)
+  })
   it('double init', async () => {
     let e: any
     try {
